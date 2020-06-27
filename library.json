@@ -1,0 +1,19 @@
+{
+    "name": "SPMSatRx.h",
+    "keywords": "spektrum, reciever",
+    "description": "Arduino Library for spektrum sattelite recievers",
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "authors": [
+        {
+            "name": "Ole Peterse",
+            "email": "peteole2707@gmail.com",
+            "maintainer": true
+        }
+    ],
+    "version": "1.0",
+    "frameworks": "arduino",
+    "platforms": "*"
+}
