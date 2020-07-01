@@ -1,12 +1,18 @@
 #include <SPMSatRx.h>
-SPMSatRx::SPMSatRx(int pin, Stream *input, int numOfChannels) : numOfChannels(numOfChannels)
+SPMSatRx::SPMSatRx(int pin, Stream *input, int numOfChannels, ProtocolMode protocolMode, DataFormat dataFormat) : numOfChannels(numOfChannels)
 {
     this->pin = pin;
     this->input = input;
+    this->channelValues = new float[numOfChannels];
+    this->protocolMode = protocolMode;
+    this->dataFormat = dataFormat;
 }
 void SPMSatRx::bind()
 {
-    for (char i = 0; i < NUM_OF_BIND_PULSES; i++)
+
+    pinMode(pin, OUTPUT);
+    delay(100);
+    for (char i = 0; i < this->protocolMode; i++)
     {
         // no documentation of requirements for pulse width but 200us and a
         // duty cycle of 50% was tested succesfully
@@ -15,42 +21,53 @@ void SPMSatRx::bind()
         digitalWrite(this->pin, HIGH);
         delayMicroseconds(100);
     }
+    pinMode(pin, INPUT);
 }
 float SPMSatRx::getChannel(int channelId)
 {
-    return (float)this->chVal[channelId];
+    return this->channelValues[channelId];
 }
 bool SPMSatRx::read(void)
 {
     while (input->available() >= 16)
     {
+        //input->read();
         time = millis();
-        for (i = 0; i < 16; i++)
+        for (short i = 0; i < 16; i++)
         {
             inByte = input->read();
             inData[i] = inByte;
         }
     }
-
-    for (i = 1; i < 8; i++)
+    switch (this->dataFormat)
     {
-        temp = inData[i * 2] * 256 + inData[i * 2 + 1];
-
-        tempId = temp >> 11;
-
-        tempVal = temp << 5;
-        tempVal = tempVal >> 5;
-
-        if (tempId < numOfChannels)
+    case DataFormat::DSMX:
+    {
+        for (int i = 1; i < 8; i++)
         {
-            chVal[tempId] = tempVal - 342;
+            uint16_t val = inData[i * 2] * 256 + inData[i * 2 + 1];
+            int chan = DSMXServoValue::getChannel(val);
+            if (chan < 0 || chan >= numOfChannels)
+                break;
+            channelValues[chan] = DSMXServoValue::getValue(val);
         }
-        else
-        {
-            //error, ignore ;)
-        }
+        break;
     }
-
+    case (DataFormat::DSM2):
+    {
+        for (int i = 1; i < 8; i++)
+        {
+            uint16_t val = inData[i * 2] * 256 + inData[i * 2 + 1];
+            int chan = DSM2ServoValue::getChannel(val);
+            if (chan < 0 || chan >= numOfChannels)
+                break;
+            channelValues[chan] = DSM2ServoValue::getValue(val);
+        }
+        break;
+    }
+    default:
+        break;
+    }
     return getTrans();
 }
 
@@ -64,4 +81,25 @@ bool SPMSatRx::getTrans()
     {
         return true;
     }
+}
+uint8_t SPMSatRx::DSMXServoValue::getChannel(const uint16_t &value)
+{
+    return value >> 11;
+}
+uint8_t SPMSatRx::DSM2ServoValue::getChannel(const uint16_t &value)
+{
+    return value >> 10;
+}
+float SPMSatRx::DSMXServoValue::getValue(const uint16_t &value)
+{
+    uint16_t tmp = value << 5;
+    tmp = tmp >> 5;
+    return ((float)tmp) / 2048.0;
+}
+
+float SPMSatRx::DSM2ServoValue::getValue(const uint16_t &value)
+{
+    uint16_t tmp = value << 6;
+    tmp = tmp >> 6;
+    return ((float)tmp) / 1024.0;
 }
