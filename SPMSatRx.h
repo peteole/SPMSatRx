@@ -50,7 +50,7 @@ Both values are binary integer numbers, meaning that there are 2^11=2048 possibl
 Note that these data formats do not necessarily correspond to the selected mode even though they should, so if you only get correct values for the throttle, just try selecting the other data format.
 
 */
-#ifndef SMP_SAT_RX_H
+#ifndef SPM_SAT_RX_H
 #define SPM_SAT_RX_H
 #include <Arduino.h>
 #define NUM_OF_BIND_PULSES 9
