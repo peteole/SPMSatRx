@@ -1,5 +1,5 @@
 {
-    "name": "SPMSatRx.h",
+    "name": "SPMSatRx",
     "keywords": "spektrum, reciever",
     "description": "Arduino Library for spektrum sattelite recievers",
     "repository": {
